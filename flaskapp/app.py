@@ -35,6 +35,9 @@ if not bing_api_key:
 log_level = getattr(logging, config.get('log_level', 'INFO').upper(), logging.INFO)
 logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
+port = int(os.environ.get("PORT", 8000))
+app.run(host="0.0.0.0", port=port, debug=False)
+
 def preprocess_text(text):
     """
     Preprocess input text to remove noise and unnecessary elements.
