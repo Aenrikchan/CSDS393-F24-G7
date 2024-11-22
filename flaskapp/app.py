@@ -3,7 +3,6 @@ from flask import Flask, request, jsonify
 import openai
 import requests
 import logging
-from datetime import datetime
 
 app = Flask(__name__)
 
@@ -15,11 +14,11 @@ def load_config(config_path="config.yaml"):
 config = load_config()
 
 # Set API keys and other parameters
-openai.api_key = config['openai_api_key']
-bing_api_key = config['bing_api_key']
-MAX_TOKENS = config['max_tokens']
-SEARCH_RESULT_COUNT = config['search_result_count']
-SEARCH_RETRY_LIMIT = config['search_retry_limit']
+openai.api_key = config.get('openai_api_key', '')
+bing_api_key = config.get('bing_api_key', '')
+MAX_TOKENS = config.get('max_tokens', 100)
+SEARCH_RESULT_COUNT = config.get('search_result_count', 5)
+SEARCH_RETRY_LIMIT = config.get('search_retry_limit', 3)
 
 log_level = getattr(logging, config.get('log_level', 'INFO').upper(), logging.INFO)
 logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
