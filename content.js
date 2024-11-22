@@ -179,19 +179,25 @@ function cleanText(text) {
  */
 async function sendToAzure(content, metadata) {
   try {
-    const response = await fetch('sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze', {
+    const response = await fetch('https://sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ content, metadata }),
     });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     return await response.json();
   } catch (error) {
     console.error('Error sending data to Azure:', error);
     throw error;
   }
 }
+
 
 /**
  * Sends the scraped content to the Azure backend for processing.
