@@ -3,8 +3,11 @@ from flask import Flask, request, jsonify
 import openai
 import requests
 import logging
+from flask_cors import CORS
+import os
 
 app = Flask(__name__)
+CORS(app)
 
 # Load configuration from file
 def load_config(config_path="config.yaml"):
@@ -14,11 +17,13 @@ def load_config(config_path="config.yaml"):
 config = load_config()
 
 # Set API keys and other parameters
-openai.api_key = config.get('openai_api_key', '')
-bing_api_key = config.get('bing_api_key', '')
+openai_api_key = os.getenv('OPENAI_API_KEY', '')
+bing_api_key = os.getenv('BING_API_KEY', '')
 MAX_TOKENS = config.get('max_tokens', 100)
 SEARCH_RESULT_COUNT = config.get('search_result_count', 5)
 SEARCH_RETRY_LIMIT = config.get('search_retry_limit', 3)
+
+openai.api_key = openai_api_key
 
 # Graceful fallback for missing keys
 if not openai.api_key:
