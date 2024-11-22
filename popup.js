@@ -1,5 +1,4 @@
 // popup.js
-
 document.getElementById('analyzeButton').addEventListener('click', () => {
   // get current tab
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -15,4 +14,3 @@ document.getElementById('analyzeButton').addEventListener('click', () => {
       }
     });
   });
-});
