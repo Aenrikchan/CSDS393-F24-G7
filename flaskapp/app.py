@@ -11,8 +11,12 @@ CORS(app)
 
 # Load configuration from file
 def load_config(config_path="config.yaml"):
-    with open(config_path, 'r') as file:
-        return yaml.safe_load(file)
+    try:
+        with open(config_path, 'r') as file:
+            return yaml.safe_load(file)
+    except FileNotFoundError:
+        logging.error(f"Configuration file not found at {config_path}")
+        return {}
 
 config = load_config()
 
@@ -32,22 +36,13 @@ if not openai.api_key:
 if not bing_api_key:
     logging.warning("Bing API key is missing. Search functionality will be disabled.")
 
-log_level = getattr(logging, config.get('log_level', 'INFO').upper(), logging.INFO)
-logging.basicConfig(level=log_level, format='%(asctime)s - %(levelname)s - %(message)s')
-
-port = int(os.environ.get("PORT", 8000))
-app.run(host="0.0.0.0", port=port, debug=False)
+# Logging configuration
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def preprocess_text(text):
-    """
-    Preprocess input text to remove noise and unnecessary elements.
-    """
     return text.strip()
 
 def summarize_text(text):
-    """
-    Use OpenAI GPT to summarize the given text.
-    """
     try:
         response = openai.Completion.create(
             engine="gpt-4",
@@ -63,10 +58,6 @@ def summarize_text(text):
         raise
 
 def search_alternative_sources(query, retry_count=0):
-    """
-    Use Bing Search API to find alternative sources for the given query.
-    Implements retries for robustness.
-    """
     if retry_count >= SEARCH_RETRY_LIMIT:
         logging.error(f"Search retry limit reached for query: {query}")
         return []
@@ -89,7 +80,6 @@ def search_alternative_sources(query, retry_count=0):
             for result in search_results.get("webPages", {}).get("value", [])
         ]
 
-        # Filter duplicates and irrelevant links
         unique_links = {link['url']: link for link in links}.values()
         return list(unique_links)
 
@@ -99,11 +89,7 @@ def search_alternative_sources(query, retry_count=0):
 
 @app.route('/analyze', methods=['POST'])
 def analyze_content():
-    """
-    Main API endpoint to analyze content and return a summary with alternative sources.
-    """
     try:
-        # Extract and validate input
         data = request.json
         text = preprocess_text(data.get('content', ''))
         metadata = data.get('metadata', {})
@@ -111,13 +97,9 @@ def analyze_content():
         if not text:
             return jsonify({'error': 'No content provided'}), 400
 
-        # Summarize content
         summary = summarize_text(text)
-        
-        # Search for alternative sources
         alternative_sources = search_alternative_sources(summary)
 
-        # Return combined results
         return jsonify({
             'summary': summary,
             'metadata': metadata,
@@ -127,6 +109,3 @@ def analyze_content():
     except Exception as e:
         logging.error(f"Error in /analyze endpoint: {e}")
         return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(debug=False, host='0.0.0.0', port=8000)
