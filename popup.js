@@ -36,7 +36,6 @@ function updateURL(urls) {
 
 // Example usage of updateURL
 const exampleURLs = [
-    'https://www.npr.org/',
     'https://www.bbc.com/news',
     'https://www.cnn.com'
 ];
