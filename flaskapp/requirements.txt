@@ -6,3 +6,4 @@ gunicorn==21.2.0
 setuptools>=65.0
 wheel>=0.40.0
 build
+Flask-Cors==3.0.10
