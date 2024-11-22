@@ -13,8 +13,6 @@ def load_config(config_path="config.yaml"):
 
 config = load_config()
 
-
-
 # Set API keys and other parameters
 openai.api_key = config.get('openai_api_key', '')
 bing_api_key = config.get('bing_api_key', '')
