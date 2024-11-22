@@ -14,3 +14,4 @@ document.getElementById('analyzeButton').addEventListener('click', () => {
       }
     });
   });
+})
