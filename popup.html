@@ -7,17 +7,34 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Scrape Web Content</h1>
+    <h1>Web Content Analyzer</h1>
+
+    <!-- 按钮 -->
     <button id="analyzeButton">Analyze</button>
-    <button id="scrapeBtn">Scrape</button>
-    <div id="scrapedContent"></div>
-    <div id="metadata"></div>
+
+    <!-- 显示内容区域 -->
+    <div>
+        <h2>Summary</h2>
+        <div id="summary"></div>
+    </div>
+    <div>
+        <h2>Metadata</h2>
+        <div id="metadata"></div>
+    </div>
+
+    <!-- 错误信息 -->
+    <div id="error" style="color: red;"></div>
+
+    <!-- 相关链接展示区域 -->
     <div id="urlSection">
         <h2>Related News Articles: </h2>
         <ul id="urlList">
             <li><a href="https://www.npr.org/" target="_blank" rel="noopener noreferrer">https://www.npr.org/</a></li>
         </ul>
     </div>
+
+    <!-- 脚本文件 -->
     <script src="popup.js"></script>
 </body>
 </html>
+
