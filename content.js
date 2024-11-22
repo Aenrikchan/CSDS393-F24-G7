@@ -170,18 +170,45 @@ function cleanText(text) {
     });
   }
   
-  // Listen for messages from popup.js
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'scrape') {
-      scrapePageContent()
-        .then(result => {
-          sendResponse({ success: true, data: result });
-        })
-        .catch(error => {
-          sendResponse({ success: false, error: error });
-        });
-      // Indicate that the response will be sent asynchronously
-      return true;
-    }
-  });
+  /**
+ * Sends the scraped content to the Azure backend for processing.
+ *
+ * @param {string} content - The scraped content.
+ * @param {Object} metadata - The extracted metadata.
+ * @returns {Promise<Object>} - A promise that resolves to the backend's response.
+ */
+async function sendToAzure(content, metadata) {
+  try {
+    const response = await fetch('https://sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ content, metadata }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error sending data to Azure:', error);
+    throw error;
+  }
+}
+
+// Listen for messages from popup.js
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'scrape') {
+    scrapePageContent()
+      .then(result => {
+        // Send the data to Azure for further processing
+        return sendToAzure(result.content, result.metadata);
+      })
+      .then(response => {
+        sendResponse({ success: true, data: response });
+      })
+      .catch(error => {
+        sendResponse({ success: false, error: error });
+      });
+    // Indicate that the response will be sent asynchronously
+    return true;
+  }
+});
   
