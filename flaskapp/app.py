@@ -3,8 +3,10 @@ from flask import Flask, request, jsonify
 import openai
 import requests
 import logging
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Load configuration from file
 def load_config(config_path="config.yaml"):
