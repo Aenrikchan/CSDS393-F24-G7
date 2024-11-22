@@ -179,7 +179,7 @@ function cleanText(text) {
  */
 async function sendToAzure(content, metadata) {
   try {
-    const response = await fetch('https://sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze', {
+    const response = await fetch('sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
