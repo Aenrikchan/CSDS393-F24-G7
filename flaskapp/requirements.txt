@@ -1,0 +1,6 @@
+flask
+openai
+requests
+logging
+datetime
+yaml

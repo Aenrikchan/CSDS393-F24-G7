@@ -1,0 +1,6 @@
+openai_api_key: ""
+bing_api_key: "your_bing_api_key"
+max_tokens: 500
+search_result_count: 5
+search_retry_limit: 2
+log_level: "INFO"
