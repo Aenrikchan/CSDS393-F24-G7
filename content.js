@@ -167,15 +167,18 @@ function scrapePageContent() {
 }
 
 /**
- * Sends the scraped content to the Azure backend for processing.
+ * Sends the scraped content to the local Flask server for processing.
  *
  * @param {string} content - The scraped content.
  * @param {Object} metadata - The extracted metadata.
- * @returns {Promise<Object>} - A promise that resolves to the backend's response.
+ * @returns {Promise<Object>} - A promise that resolves to the server's response.
  */
 async function sendToAzure(content, metadata) {
   try {
-    const response = await fetch('https://sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze', {
+    console.log("Sending data to local server:", { content, metadata });
+
+    // Replace Azure URL with local server URL
+    const response = await fetch('http://127.0.0.1:5000/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -184,15 +187,20 @@ async function sendToAzure(content, metadata) {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      throw new Error(`HTTP error! Status: ${response.status}`);
     }
 
-    return await response.json();
+    // Parse and return JSON response
+    const data = await response.json();
+    console.log('Local server response data:', data);
+    return data;
   } catch (error) {
-    console.error('Error sending data to Azure:', error);
+    console.error("Error sending data to local server:", error.message);
     throw error;
   }
 }
+
+
 
 // Listen for messages from popup.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
