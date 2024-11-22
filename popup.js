@@ -1,21 +1,18 @@
 // popup.js
 // This function is used to toggle the visibility of a div element in the HTML.
+// This function toggles the visibility of a div element in the HTML.
 function toggleDivVisibility(divId) {
     const div = document.getElementById(divId);
     if (!div) {
         console.error(`Div with ID "${divId}" not found.`);
         return;
     }
-    if (div.style.display === "none") {
-        div.style.display = "block"; // Show the div
-    } else {
-        div.style.display = "none"; // Hide the div
-    }
+    div.style.display = (div.style.display === "none") ? "block" : "none";
 }
 
 // This function updates the URL list in the HTML with clickable links for each URL provided.
 function updateURL(urls) {
-    const urlList = document.getElementById('urlList'); // Select the <ul> element
+    const urlList = document.getElementById('urlList');
     if (!urlList) {
         console.error("URL list element not found.");
         return;
@@ -23,35 +20,42 @@ function updateURL(urls) {
 
     urlList.innerHTML = ''; // Clear existing content
 
-    // Loop through the URLs array and create list items
     urls.forEach(url => {
-        const listItem = document.createElement('li'); // Create a new <li>
-        const link = document.createElement('a'); // Create a new <a> tag
+        const listItem = document.createElement('li');
+        const link = document.createElement('a');
 
-        link.href = url; // Set the URL
-        link.target = '_blank'; // Open in a new tab
-        link.rel = 'noopener noreferrer'; // Add security attributes
-        link.textContent = url; // Display the URL as the link text
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.textContent = url;
 
-        listItem.appendChild(link); // Append the <a> tag to the <li>
-        urlList.appendChild(listItem); // Append the <li> to the <ul>
+        listItem.appendChild(link);
+        urlList.appendChild(listItem);
     });
 }
 
 // Example usage of updateURL
-const urls = [
+const exampleURLs = [
     'https://www.npr.org/',
     'https://www.bbc.com/news',
     'https://www.cnn.com'
 ];
-updateURL(urls);
+updateURL(exampleURLs);
 
-// Wait for DOM content to load before attaching event listeners
+// Wait for the DOM content to load before attaching event listeners
 document.addEventListener('DOMContentLoaded', () => {
     const analyzeButton = document.getElementById('analyzeButton');
+    const errorElement = document.getElementById('error');
+    const summaryElement = document.getElementById('summary');
+    const metadataElement = document.getElementById('metadata');
 
+    // Check if the required elements exist
     if (!analyzeButton) {
         console.error("Analyze button not found. Please check your popup.html.");
+        return;
+    }
+    if (!errorElement || !summaryElement || !metadataElement) {
+        console.error("Required elements (error, summary, metadata) not found in popup.html.");
         return;
     }
 
@@ -62,33 +66,31 @@ document.addEventListener('DOMContentLoaded', () => {
             chrome.tabs.sendMessage(tabs[0].id, { action: 'scrape' }, (response) => {
                 if (chrome.runtime.lastError) {
                     // Handle runtime errors (e.g., content script not found)
-                    document.getElementById('error').textContent = `Error: ${chrome.runtime.lastError.message}`;
+                    errorElement.textContent = `Error: ${chrome.runtime.lastError.message}`;
                     console.error(`Runtime error: ${chrome.runtime.lastError.message}`);
                     return;
                 }
 
                 if (response && response.success) {
-                    // Display summary and metadata from the response
-                    const summaryElement = document.getElementById('summary');
-                    const metadataElement = document.getElementById('metadata');
-                    if (summaryElement) {
+                    // Display the summary
+                    if (response.data && response.data.summary) {
                         summaryElement.textContent = response.data.summary;
                     } else {
-                        console.error("Summary element not found.");
+                        summaryElement.textContent = "No summary available.";
+                        console.warn("Response does not contain summary data.");
                     }
-                    if (metadataElement) {
+
+                    // Display the metadata
+                    if (response.data && response.data.metadata) {
                         metadataElement.textContent = JSON.stringify(response.data.metadata, null, 2);
                     } else {
-                        console.error("Metadata element not found.");
+                        metadataElement.textContent = "No metadata available.";
+                        console.warn("Response does not contain metadata data.");
                     }
                 } else {
-                    // Display error message if response is unsuccessful
-                    const errorElement = document.getElementById('error');
-                    if (errorElement) {
-                        errorElement.textContent = `Error: ${response ? response.error : "No response received."}`;
-                    } else {
-                        console.error("Error element not found.");
-                    }
+                    // Display an error message if response is unsuccessful
+                    errorElement.textContent = `Error: ${response ? response.error : "No response received."}`;
+                    console.error("Error in response:", response);
                 }
             });
         });
