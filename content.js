@@ -65,6 +65,7 @@ function extractMainContent() {
     '.news-content',
     '.post-body',
     '.content-body'
+
     // Add more here during testing/iteration when we find other selectors in specific websites
   ];
 
@@ -246,6 +247,7 @@ function sendToBackend(scrapedData) {
 // Listen for messages from popup.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'scrape') {
+
     console.log("Scraping page content", request);
     scrapePageContent()
       .then((scrapedData) => {
