@@ -1,3 +1,4 @@
+/* content.js */
 /**
  * Helper function to clean up extracted text.
  * Removes excessive whitespace, line breaks, and unwanted patterns.
@@ -9,10 +10,10 @@ function cleanText(text) {
   return text
     .replace(/\s+/g, ' ')                      // Replace multiple spaces/newlines with a single space
     .replace(/(\r\n|\n|\r)/gm, ' ')            // Remove line breaks
-    .replace(/Share this article:.*/gi, '')    // Remove "Share this article" and similar phrases
-    .replace(/Read more.*$/gi, '')             // Remove "Read more" links
-    .replace(/Related Articles:.*/gi, '')      // Remove "Related Articles" sections
-    .trim();                                   // Trim leading and trailing whitespace
+    .replace(/Share this article:.*/gi, '')     // Remove "Share this article" and similar phrases
+    .replace(/Read more.*$/gi, '')              // Remove "Read more" links
+    .replace(/Related Articles:.*/gi, '')       // Remove "Related Articles" sections
+    .trim();                                    // Trim leading and trailing whitespace
 }
 
 /**
@@ -36,6 +37,7 @@ function removeUnwantedElements() {
     '.cookie-consent',
     '.top-banner',
     '.bottom-banner'
+    // Add more here during testing when we find other selectors in specific websites
   ];
 
   unwantedSelectors.forEach(selector => {
@@ -63,6 +65,8 @@ function extractMainContent() {
     '.news-content',
     '.post-body',
     '.content-body'
+
+    // Add more here during testing/iteration when we find other selectors in specific websites
   ];
 
   for (let selector of articleSelectors) {
@@ -89,6 +93,19 @@ function extractMetadata() {
     source: 'Unknown Source'
   };
 
+  // Attempt to extract the source/site name
+  const sourceMeta = document.querySelector('meta[property="og:site_name"]');
+  if (sourceMeta) {
+    metadata.source = sourceMeta.getAttribute('content') || metadata.source;
+  } else {
+    metadata.source = window.location.hostname;
+  }
+
+  if(metadata.source == "DEV Community"){
+    const authorElement = document.querySelector("#main-title > div > div.flex.s\\:items-start.flex-col.s\\:flex-row > div.flex.flex-1.mb-5.items-start > div.pl-3.flex-1 > a.crayons-link.fw-bold")
+    metadata.author = authorElement.innerText.trim();
+  }
+
   // Attempt to extract the author
   const authorSelectors = [
     '.author-name',
@@ -98,12 +115,15 @@ function extractMetadata() {
     '.article-author',
     '.writer',
     '.posted-by'
+    // Add more here during testing/iteration when we find other selectors in specific websites
   ];
-  for (let selector of authorSelectors) {
-    const authorElement = document.querySelector(selector);
-    if (authorElement) {
-      metadata.author = authorElement.innerText.trim();
-      break;
+  if (!metadata.author){
+    for (let selector of authorSelectors) {
+      const authorElement = document.querySelector(selector);
+      if (authorElement) {
+        metadata.author = authorElement.innerText.trim();
+        break;
+      }
     }
   }
 
@@ -115,6 +135,7 @@ function extractMetadata() {
     '.date',
     '.article-date',
     '.posted-on'
+    // Add more here during testing/iteration when we find other selectors in specific websites
   ];
   for (let selector of dateSelectors) {
     const dateElement = document.querySelector(selector);
@@ -124,13 +145,7 @@ function extractMetadata() {
     }
   }
 
-  // Attempt to extract the source/site name
-  const sourceMeta = document.querySelector('meta[property="og:site_name"]');
-  if (sourceMeta) {
-    metadata.source = sourceMeta.getAttribute('content') || metadata.source;
-  } else {
-    metadata.source = window.location.hostname;
-  }
+
 
   return metadata;
 }
@@ -145,7 +160,7 @@ function scrapePageContent() {
   return new Promise((resolve, reject) => {
     try {
       // Remove unwanted elements from the DOM
-      removeUnwantedElements();
+      // removeUnwantedElements();
 
       // Extract main content
       const content = extractMainContent();
@@ -166,63 +181,88 @@ function scrapePageContent() {
   });
 }
 
+
+
 /**
- * Sends the scraped content to the local Flask server for processing.
+ * Sends the scraped content and metadata to the backend API for summarization and alternative links.
+ * Includes a robust retry mechanism with timeout and exponential backoff for error handling.
  *
- * @param {string} content - The scraped content.
- * @param {Object} metadata - The extracted metadata.
- * @returns {Promise<Object>} - A promise that resolves to the server's response.
+ * @param {Object} scrapedData - The object containing `content` and `metadata`.
+ * @returns {Promise<Object>} - The response from the backend API.
  */
-async function sendToAzure(content, metadata) {
-  try {
-    console.log("Sending data to local server:", { content, metadata });
+function sendToBackend(scrapedData) {
+  const backendUrl = "http://localhost:8080/analyze";
+  const maxRetries = 15; // Maximum number of retries
+  const timeoutLimit = 10000; // Timeout for fetch in milliseconds
 
-    // Replace Azure URL with local server URL
-    const response = await fetch('http://127.0.0.1:5000/analyze', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+  // Validate and align the request body structure
+  const requestBody = {
+    content: scrapedData?.content || "Default content",
+    metadata: scrapedData?.metadata || { source: "Unknown source" },
+  };
+
+  // Fetch with timeout support
+  const fetchWithTimeout = (url, options, timeout) =>
+    Promise.race([
+      fetch(url, options),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), timeout)),
+    ]);
+
+  const fetchWithRetry = (retriesLeft) => {
+    console.log(`Attempting to send request. Retries left: ${retriesLeft}`);
+    return fetchWithTimeout(
+      backendUrl,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
       },
-      body: JSON.stringify({ content, metadata }),
-    });
+      timeoutLimit
+    )
+      .then((response) => {
+        if (!response.ok) {
+          console.warn(`Request failed with status: ${response.status} - ${response.statusText}`);
+          throw new Error(`Backend error: ${response.statusText}`);
+        }
+        return response.json();
+      })
+      .catch((error) => {
+        if (retriesLeft > 0) {
+          console.warn(`Retrying... (${maxRetries - retriesLeft + 1}/${maxRetries}) due to: ${error.message}`);
+          const delay = Math.min(2000 * 2 ** (maxRetries - retriesLeft), 15000); // Exponential backoff with max delay
+          return new Promise((resolve) => setTimeout(() => resolve(fetchWithRetry(retriesLeft - 1)), delay));
+        } else {
+          console.error("Max retries reached. No further attempts will be made.");
+          throw error; // Final failure
+        }
+      });
+  };
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
-    }
-
-    // Parse and return JSON response
-    const data = await response.json();
-    console.log('Local server response data:', data);
-    return data;
-  } catch (error) {
-    console.error("Error sending data to local server:", error.message);
-    throw error;
-  }
+  // Start the fetch with retries
+  return fetchWithRetry(maxRetries);
 }
-
-
 
 // Listen for messages from popup.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'scrape') {
-    scrapePageContent()
-      .then(result => {
-        // Log successful scraping
-        console.log('Scraped content and metadata:', result);
 
-        // Send the data to Azure for further processing
-        return sendToAzure(result.content, result.metadata);
+    console.log("Scraping page content", request);
+    scrapePageContent()
+      .then((scrapedData) => {
+        chrome.runtime.sendMessage({ action: 'scraped', data: scrapedData });
+        // Send the scraped data to the backend
+        sendToBackend(scrapedData)
+          .then((backendResponse) => {
+            console.log("Backend response", backendResponse);
+            sendResponse({ success: true, data: backendResponse });
+          });
       })
-      .then(response => {
-        sendResponse({ success: true, data: response });
-      })
-      .catch(error => {
-        console.error('Error in processing:', error);
+      .catch((error) => {
         sendResponse({ success: false, error: error.message });
       });
-
     // Indicate that the response will be sent asynchronously
     return true;
   }
 });
-

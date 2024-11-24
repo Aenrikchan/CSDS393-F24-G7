@@ -45,39 +45,3 @@ body {
     margin: 5px 0;
     font-size: 14px;
   }
-  
-
-  #urlSection {
-    margin-top: 20px;
-    padding: 10px;
-    border: 1px solid #000000;
-    border-radius: 4px;
-    background-color: #f9f9f9;
-}
-
-#urlSection h2 {
-    font-size: 16px;
-    margin-bottom: 10px;
-    color: #333;
-}
-
-#urlList {
-    list-style-type: none;
-    padding: 0;
-}
-
-#urlList li {
-    margin-bottom: 8px;
-}
-
-#urlList a {
-    text-decoration: none;
-    color: #007BFF;
-    font-size: 14px;
-    word-wrap: break-word;
-}
-
-#urlList a:hover {
-    text-decoration: underline;
-    color: #0056b3;
-}

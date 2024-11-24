@@ -1,40 +1,15 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Scraper</title>
-    <link rel="stylesheet" href="styles.css">
+  <title>Content Scraper</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Web Content Analyzer</h1>
-
-    <!-- 按钮 -->
-    <button id="analyzeButton">Analyze</button>
-
-    <!-- 显示内容区域 -->
-    <div>
-        <h2>Summary</h2>
-        <div id="summary"></div>
-    </div>
-    <div>
-        <h2>Metadata</h2>
-        <div id="metadata"></div>
-    </div>
-
-    <!-- 错误信息 -->
-    <div id="error" style="color: red;"></div>
-
-    <!-- 相关链接展示区域 -->
-    <div id="urlSection">
-        <h2>Related News Articles: </h2>
-        <ul id="urlList">
-            <li><a href="https://www.npr.org/" target="_blank" rel="noopener noreferrer">https://www.npr.org/</a></li>
-        </ul>
-    </div>
-
-    <!-- 脚本文件 -->
-    <script src="popup.js"></script>
+  <h1>Content Scraper</h1>
+  <button id="scrapeBtn">Scrape Content</button>
+  <div id="metadata"></div>
+  <div id="scrapedContent"></div>
+  <div id="alternativeLinks"></div>
+  <script src="popup.js"></script>
 </body>
 </html>
-

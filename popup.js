@@ -1,98 +1,60 @@
-// popup.js
-// This function is used to toggle the visibility of a div element in the HTML.
-// This function toggles the visibility of a div element in the HTML.
-function toggleDivVisibility(divId) {
-    const div = document.getElementById(divId);
-    if (!div) {
-        console.error(`Div with ID "${divId}" not found.`);
-        return;
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'scraped') {
+        console.log("Scraped", request);
+        const { metadata = {}} = request.data;
+        // Display metadata
+        const metadataDiv = document.getElementById('metadata');
+        metadataDiv.innerHTML = `
+                                <p><strong>Title:</strong> ${metadata.title || 'Unknown Title'}</p>
+                                <p><strong>Author:</strong> ${metadata.author || 'Unknown Author'}</p>
+                                <p><strong>Date:</strong> ${metadata.date || 'Unknown Date'}</p>
+                                <p><strong>Source:</strong> ${metadata.source || 'Unknown Source'}</p>
+                            `;
+
     }
-    div.style.display = (div.style.display === "none") ? "block" : "none";
-}
+});
 
-// This function updates the URL list in the HTML with clickable links for each URL provided.
-function updateURL(urls) {
-    const urlList = document.getElementById('urlList');
-    if (!urlList) {
-        console.error("URL list element not found.");
-        return;
-    }
+document.getElementById('scrapeBtn').addEventListener('click', () => {
+    // Query the active tab
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        const activeTab = tabs[0];
 
-    urlList.innerHTML = ''; // Clear existing content
+        // Send a message to the content script to start scraping
+        chrome.tabs.sendMessage(activeTab.id, { action: 'scrape' }, (response) => {
+            console.log("Response", response);
+            if (chrome.runtime.lastError) {
+                document.getElementById('scrapedContent').textContent = 'Error: ' + chrome.runtime.lastError.message;
+                return;
+            }
+            if (response && !response.success) {
+                document.getElementById('scrapedContent').textContent = 'Error: ' + response.error;
+                return;
+            }
+            if (response && response.success) {
+                // Display the summarized content and alternative sources
+                const { summary = "No summary available.", alternative_sources = [] } = response.data;
 
-    urls.forEach(url => {
-        const listItem = document.createElement('li');
-        const link = document.createElement('a');
 
-        link.href = url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = url;
+                // Display summarized content
+                const contentDiv = document.getElementById('scrapedContent');
+                contentDiv.textContent = summary;
 
-        listItem.appendChild(link);
-        urlList.appendChild(listItem);
-    });
-}
-
-// Example usage of updateURL
-const exampleURLs = [
-    'https://www.npr.org/',
-    'https://www.bbc.com/news',
-    'https://www.cnn.com'
-];
-updateURL(exampleURLs);
-
-// Wait for the DOM content to load before attaching event listeners
-document.addEventListener('DOMContentLoaded', () => {
-    const analyzeButton = document.getElementById('analyzeButton');
-    const errorElement = document.getElementById('error');
-    const summaryElement = document.getElementById('summary');
-    const metadataElement = document.getElementById('metadata');
-
-    // Check if the required elements exist
-    if (!analyzeButton) {
-        console.error("Analyze button not found. Please check your popup.html.");
-        return;
-    }
-    if (!errorElement || !summaryElement || !metadataElement) {
-        console.error("Required elements (error, summary, metadata) not found in popup.html.");
-        return;
-    }
-
-    // Add click event listener to the Analyze button
-    analyzeButton.addEventListener('click', () => {
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            // Send a message to the content script
-            chrome.tabs.sendMessage(tabs[0].id, { action: 'scrape' }, (response) => {
-                if (chrome.runtime.lastError) {
-                    // Handle runtime errors (e.g., content script not found)
-                    errorElement.textContent = `Error: ${chrome.runtime.lastError.message}`;
-                    console.error(`Runtime error: ${chrome.runtime.lastError.message}`);
-                    return;
-                }
-
-                if (response && response.success) {
-                    // Display the summary
-                    if (response.data && response.data.summary) {
-                        summaryElement.textContent = response.data.summary;
-                    } else {
-                        summaryElement.textContent = "No summary available.";
-                        console.warn("Response does not contain summary data.");
-                    }
-
-                    // Display the metadata
-                    if (response.data && response.data.metadata) {
-                        metadataElement.textContent = JSON.stringify(response.data.metadata, null, 2);
-                    } else {
-                        metadataElement.textContent = "No metadata available.";
-                        console.warn("Response does not contain metadata data.");
-                    }
+                // Display alternative links
+                const linksDiv = document.getElementById('alternativeLinks');
+                if (Array.isArray(alternative_sources) && alternative_sources.length > 0) {
+                    linksDiv.innerHTML = '<h3>Alternative Links:</h3>';
+                    alternative_sources.forEach((link) => {
+                        const linkElement = document.createElement('p');
+                        linkElement.innerHTML = `<a href="${link.url}" target="_blank">${link.title}</a>: ${link.snippet}`;
+                        linksDiv.appendChild(linkElement);
+                    });
                 } else {
-                    // Display an error message if response is unsuccessful
-                    errorElement.textContent = `Error: ${response ? response.error : "No response received."}`;
-                    console.error("Error in response:", response);
+                    linksDiv.innerHTML += '<p>No alternative links available.</p>';
                 }
-            });
+                return;
+            }
+            document.getElementById('scrapedContent').textContent = 'Error: Unknown error.';
         });
     });
 });
