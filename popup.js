@@ -15,6 +15,29 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 document.getElementById('scrapeBtn').addEventListener('click', () => {
+    const scrapedContentDiv = document.getElementById('scrapedContent');
+    const linksDiv = document.getElementById('alternativeLinks');
+
+    // Clear existing content
+    scrapedContentDiv.innerHTML = '';
+    linksDiv.innerHTML = '';
+
+    // Add "Loading" with jumping dots
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'loading';
+
+    // Add "Loading"
+    const loadingText = "Loading... ";
+    for (let char of loadingText) {
+        const span = document.createElement('span');
+        span.textContent = char;
+        loadingDiv.appendChild(span);
+    }
+
+
+    // Append loading animation to the content div
+    scrapedContentDiv.appendChild(loadingDiv);
+
     // Query the active tab
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
@@ -23,24 +46,21 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
         chrome.tabs.sendMessage(activeTab.id, { action: 'scrape' }, (response) => {
             console.log("Response", response);
             if (chrome.runtime.lastError) {
-                document.getElementById('scrapedContent').textContent = 'Error: ' + chrome.runtime.lastError.message;
+                scrapedContentDiv.textContent = 'Error: ' + chrome.runtime.lastError.message;
                 return;
             }
             if (response && !response.success) {
-                document.getElementById('scrapedContent').textContent = 'Error: ' + response.error;
+                scrapedContentDiv.textContent = 'Error: ' + response.error;
                 return;
             }
             if (response && response.success) {
-                // Display the summarized content and alternative sources
                 const { summary = "No summary available.", alternative_sources = [] } = response.data;
 
-
-                // Display summarized content
-                const contentDiv = document.getElementById('scrapedContent');
-                contentDiv.textContent = summary;
+                // Remove loading animation and display summary
+                scrapedContentDiv.innerHTML = '';
+                scrapedContentDiv.textContent = summary;
 
                 // Display alternative links
-                const linksDiv = document.getElementById('alternativeLinks');
                 if (Array.isArray(alternative_sources) && alternative_sources.length > 0) {
                     linksDiv.innerHTML = '<h3>Alternative Links:</h3>';
                     alternative_sources.forEach((link) => {
@@ -49,11 +69,11 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
                         linksDiv.appendChild(linkElement);
                     });
                 } else {
-                    linksDiv.innerHTML += '<p>No alternative links available.</p>';
+                    linksDiv.innerHTML = '<p>No alternative links available.</p>';
                 }
-                return;
+            } else {
+                scrapedContentDiv.textContent = 'Error: Unknown error.';
             }
-            document.getElementById('scrapedContent').textContent = 'Error: Unknown error.';
         });
     });
 });
