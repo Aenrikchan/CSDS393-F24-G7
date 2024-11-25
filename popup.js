@@ -1,4 +1,3 @@
-
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'scraped') {
         console.log("Scraped", request);

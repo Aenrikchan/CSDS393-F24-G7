@@ -65,7 +65,6 @@ function extractMainContent() {
     '.news-content',
     '.post-body',
     '.content-body'
-
     // Add more here during testing/iteration when we find other selectors in specific websites
   ];
 
@@ -93,19 +92,6 @@ function extractMetadata() {
     source: 'Unknown Source'
   };
 
-  // Attempt to extract the source/site name
-  const sourceMeta = document.querySelector('meta[property="og:site_name"]');
-  if (sourceMeta) {
-    metadata.source = sourceMeta.getAttribute('content') || metadata.source;
-  } else {
-    metadata.source = window.location.hostname;
-  }
-
-  if(metadata.source == "DEV Community"){
-    const authorElement = document.querySelector("#main-title > div > div.flex.s\\:items-start.flex-col.s\\:flex-row > div.flex.flex-1.mb-5.items-start > div.pl-3.flex-1 > a.crayons-link.fw-bold")
-    metadata.author = authorElement.innerText.trim();
-  }
-
   // Attempt to extract the author
   const authorSelectors = [
     '.author-name',
@@ -117,13 +103,11 @@ function extractMetadata() {
     '.posted-by'
     // Add more here during testing/iteration when we find other selectors in specific websites
   ];
-  if (!metadata.author){
-    for (let selector of authorSelectors) {
-      const authorElement = document.querySelector(selector);
-      if (authorElement) {
-        metadata.author = authorElement.innerText.trim();
-        break;
-      }
+  for (let selector of authorSelectors) {
+    const authorElement = document.querySelector(selector);
+    if (authorElement) {
+      metadata.author = authorElement.innerText.trim();
+      break;
     }
   }
 
@@ -145,7 +129,13 @@ function extractMetadata() {
     }
   }
 
-
+  // Attempt to extract the source/site name
+  const sourceMeta = document.querySelector('meta[property="og:site_name"]');
+  if (sourceMeta) {
+    metadata.source = sourceMeta.getAttribute('content') || metadata.source;
+  } else {
+    metadata.source = window.location.hostname;
+  }
 
   return metadata;
 }
@@ -191,7 +181,7 @@ function scrapePageContent() {
  * @returns {Promise<Object>} - The response from the backend API.
  */
 function sendToBackend(scrapedData) {
-  const backendUrl = "http://localhost:8080/analyze";
+  const backendUrl = "https://sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze";
   const maxRetries = 15; // Maximum number of retries
   const timeoutLimit = 10000; // Timeout for fetch in milliseconds
 
@@ -247,7 +237,6 @@ function sendToBackend(scrapedData) {
 // Listen for messages from popup.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'scrape') {
-
     console.log("Scraping page content", request);
     scrapePageContent()
       .then((scrapedData) => {
