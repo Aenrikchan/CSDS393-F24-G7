@@ -26,16 +26,13 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'loading';
 
-    // Add "Loading"
-    const loadingText = "Loading... ";
+    const loadingText = "Loading...";
     for (let char of loadingText) {
         const span = document.createElement('span');
         span.textContent = char;
         loadingDiv.appendChild(span);
     }
 
-
-    // Append loading animation to the content div
     scrapedContentDiv.appendChild(loadingDiv);
 
     // Query the active tab
@@ -44,7 +41,6 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
 
         // Send a message to the content script to start scraping
         chrome.tabs.sendMessage(activeTab.id, { action: 'scrape' }, (response) => {
-            console.log("Response", response);
             if (chrome.runtime.lastError) {
                 scrapedContentDiv.textContent = 'Error: ' + chrome.runtime.lastError.message;
                 return;
@@ -60,14 +56,46 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
                 scrapedContentDiv.innerHTML = '';
                 scrapedContentDiv.textContent = summary;
 
-                // Display alternative links
+                // Display alternative links only if available
                 if (Array.isArray(alternative_sources) && alternative_sources.length > 0) {
-                    linksDiv.innerHTML = '<h3>Alternative Links:</h3>';
+                    // Create a wrapper for the header and links
+                    const linksWrapper = document.createElement('div');
+                    linksWrapper.style.display = 'none'; // Hide initially
+
+                    const header = document.createElement('h3');
+                    header.textContent = 'Alternative Links:';
+                    linksWrapper.appendChild(header);
+
                     alternative_sources.forEach((link) => {
                         const linkElement = document.createElement('p');
                         linkElement.innerHTML = `<a href="${link.url}" target="_blank">${link.title}</a>: ${link.snippet}`;
-                        linksDiv.appendChild(linkElement);
+                        linksWrapper.appendChild(linkElement);
                     });
+
+                    linksDiv.appendChild(linksWrapper);
+
+                    // Create and append the "Show/Hide Links" button
+                    const showLinksButton = document.createElement('button');
+                    showLinksButton.textContent = 'Get Alternative Links';
+                    showLinksButton.style.marginTop = '10px';
+                    showLinksButton.style.padding = '10px';
+                    showLinksButton.style.backgroundColor = '#4CAF50';
+                    showLinksButton.style.color = 'white';
+                    showLinksButton.style.border = 'none';
+                    showLinksButton.style.cursor = 'pointer';
+
+                    showLinksButton.addEventListener('click', () => {
+                        // Toggle visibility of the links wrapper
+                        if (linksWrapper.style.display === 'none') {
+                            linksWrapper.style.display = 'block';
+                            showLinksButton.textContent = 'Hide Alternative Links';
+                        } else {
+                            linksWrapper.style.display = 'none';
+                            showLinksButton.textContent = 'Show Alternative Links';
+                        }
+                    });
+
+                    linksDiv.appendChild(showLinksButton);
                 } else {
                     linksDiv.innerHTML = '<p>No alternative links available.</p>';
                 }
@@ -77,3 +105,5 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
         });
     });
 });
+
+
