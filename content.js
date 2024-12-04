@@ -109,6 +109,7 @@ function cleanText(text) {
         break;
       }
     }
+<<<<<<< Updated upstream
   
     // Attempt to extract the publication date
     const dateSelectors = [
@@ -125,6 +126,53 @@ function cleanText(text) {
       if (dateElement) {
         metadata.date = dateElement.getAttribute('datetime') || dateElement.innerText.trim();
         break;
+=======
+  }
+
+  // Attempt to extract the publication date
+  const dateSelectors = [
+    'time[datetime]',
+    '.publish-date',
+    '.pub-date',
+    '.date',
+    '.article-date',
+    '.posted-on'
+    // Add more here during testing/iteration when we find other selectors in specific websites
+  ];
+  for (let selector of dateSelectors) {
+    const dateElement = document.querySelector(selector);
+    if (dateElement) {
+      metadata.date = dateElement.getAttribute('datetime') || dateElement.innerText.trim();
+      break;
+    }
+  }
+
+  return metadata;
+}
+
+/**
+ * Main function to scrape and prepare the content.
+ * Removes unwanted elements, extracts main content and metadata.
+ *
+ * @returns {Promise<Object>} - A promise that resolves to an object containing the content and metadata.
+ */
+function scrapePageContent() {
+  return new Promise((resolve, reject) => {
+    try {
+      // Remove unwanted elements from the DOM
+      // removeUnwantedElements();
+
+      // Extract main content
+      const content = extractMainContent();
+
+      // Extract metadata
+      const metadata = extractMetadata();
+
+      // Ensure that some content is found
+      if (!content || content.length < 100) {
+        reject('Insufficient content found to summarize.');
+        return;
+>>>>>>> Stashed changes
       }
     }
   
@@ -200,12 +248,43 @@ async function sendToAzure(content, metadata) {
  * @param {Object} metadata - The extracted metadata.
  * @returns {Promise<Object>} - A promise that resolves to the backend's response.
  */
+<<<<<<< Updated upstream
 async function sendToAzure(content, metadata) {
   try {
     const response = await fetch('https://sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+=======
+function sendToBackend(scrapedData) {
+  const backendUrl = "https://sumlink-a8faegbrc0hthgfy.eastus2-01.azurewebsites.net/analyze";
+  const maxRetries = 15; // Maximum number of retries
+  const timeoutLimit = 10000; // Timeout for fetch in milliseconds
+
+  // Validate and align the request body structure
+  const requestBody = {
+    content: scrapedData?.content || "Default content",
+    metadata: scrapedData?.metadata || { source: "Unknown source" },
+  };
+
+  // Fetch with timeout support
+  const fetchWithTimeout = (url, options, timeout) =>
+    Promise.race([
+      fetch(url, options),
+      new Promise((_, reject) => setTimeout(() => reject(new Error("Request timed out")), timeout)),
+    ]);
+
+  const fetchWithRetry = (retriesLeft) => {
+    console.log(`Attempting to send request. Retries left: ${retriesLeft}`);
+    return fetchWithTimeout(
+      backendUrl,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+>>>>>>> Stashed changes
       },
       body: JSON.stringify({ content, metadata }),
     });

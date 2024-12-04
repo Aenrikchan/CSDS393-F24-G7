@@ -13,5 +13,9 @@ document.getElementById('analyzeButton').addEventListener('click', () => {
         document.getElementById('error').textContent = `Error: ${response.error}`;
       }
     });
+<<<<<<< Updated upstream
   });
 })
+=======
+});
+>>>>>>> Stashed changes
