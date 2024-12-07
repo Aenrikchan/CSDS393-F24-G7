@@ -2,7 +2,7 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 
-name: Build and deploy Python app to Azure Web App - SumLink
+name: Build, Test, and Deploy Python App to Azure Web App - SumLink
 
 on:
   push:
@@ -29,9 +29,12 @@ jobs:
       
       - name: Install dependencies
         run: pip install -r flaskapp/requirements.txt
-        
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
-
+      
+      - name: Run tests
+        run: |
+          source venv/bin/activate
+          pytest tests/app_test.py
+      
       - name: Zip artifact for deployment
         run: zip release.zip ./* -r
 
@@ -50,7 +53,7 @@ jobs:
       name: 'Production'
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
     permissions:
-      id-token: write #This is required for requesting the JWT
+      id-token: write 
 
     steps:
       - name: Download artifact from build job
