@@ -22,7 +22,7 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
     scrapedContentDiv.innerHTML = '';
     linksDiv.innerHTML = '';
 
-    // Add "Loading" with jumping dots
+    // Add "Loading" with dots
     const loadingDiv = document.createElement('div');
     loadingDiv.className = 'loading';
 
@@ -39,7 +39,7 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
         const activeTab = tabs[0];
 
-        // Send a message to the content script to start scraping
+        // start scraping
         chrome.tabs.sendMessage(activeTab.id, { action: 'scrape' }, (response) => {
             if (chrome.runtime.lastError) {
                 scrapedContentDiv.textContent = 'Error: ' + chrome.runtime.lastError.message;
@@ -52,13 +52,13 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
             if (response && response.success) {
                 const { summary = "No summary available.", alternative_sources = [] } = response.data;
 
-                // Remove loading animation and display summary
+                // Remove loading animation
                 scrapedContentDiv.innerHTML = '';
                 scrapedContentDiv.textContent = summary;
 
-                // Display alternative links only if available
+                // Display alternative links if available
                 if (Array.isArray(alternative_sources) && alternative_sources.length > 0) {
-                    // Create a wrapper for the header and links
+                    // Create a wrapper for header and links
                     const linksWrapper = document.createElement('div');
                     linksWrapper.style.display = 'none'; // Hide initially
 
@@ -74,7 +74,7 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
 
                     linksDiv.appendChild(linksWrapper);
 
-                    // Create and append the "Show/Hide Links" button
+                    // Create "Show/Hide Links" button
                     const showLinksButton = document.createElement('button');
                     showLinksButton.textContent = 'Get Alternative Links';
                     showLinksButton.style.marginTop = '10px';
