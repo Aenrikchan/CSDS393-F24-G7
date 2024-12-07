@@ -105,5 +105,3 @@ document.getElementById('scrapeBtn').addEventListener('click', () => {
         });
     });
 });
-
-
